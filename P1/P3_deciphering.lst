@@ -1,0 +1,116 @@
+Microsoft (R) Macro Assembler Version 6.11		    05/15/21 08:14:51
+tempfile.asm						     Page 1 - 1
+
+
+ 0000				DATAS SEGMENT
+				    ;此处输入数据段代码 
+ 0000  0064 [			    buf1 db 100 dup(?)
+        00
+       ]
+ 0064  0064 [			    buf2 db 100 dup(?)
+        00
+       ]
+ 00C8 41 5F 45 4E 43 2E		    file1 db 'A_ENC.txt',00h	;原文件
+       74 78 74 00
+ 00D2 0000			    f1 dw ?		;存放文件代号
+ 00D4 41 5F 44 45 43 2E		    file2 db 'A_DEC.txt',00h	;加密文件
+       74 78 74 00
+ 00DE 0000			    f2 dw ?		;存放文件代号
+ 00E0				DATAS ENDS
+
+ 0000				STACKS SEGMENT
+				    ;此处输入堆栈段代码
+ 0000				STACKS ENDS
+
+ 0000				CODES SEGMENT
+				    ASSUME CS:CODES,DS:DATAS,SS:STACKS
+ 0000				START:
+ 0000  B8 ---- R		    MOV AX,DATAS
+ 0003  8E D8			    MOV DS,AX
+				    ;此处输入代码段代码
+ 0005  BE 000A			    mov si,10
+				    
+				;----------打开文件1----------
+ 0008  B4 3D				mov ah,3dh
+ 000A  8D 16 00C8 R			lea dx,file1
+ 000E  B0 00				mov al,00
+ 0010  CD 21				int 21h
+ 0012  A3 00D2 R			mov f1,ax
+					
+				;----------读文件----------
+ 0015  B4 3F				mov ah,3fh
+ 0017  8B 1E 00D2 R		    mov bx,f1
+ 001B  B9 0064			    mov cx,100	;读一百个数据,此时AX=实际读入的字节数
+ 001E  8D 16 0000 R		    lea dx,buf1	;放到缓冲区
+ 0022  CD 21			    int 21h
+				    
+				;----------加密，采用a~z倒置为z~a的简单加密----------
+ 0024  8B C8				mov cx,ax	;AX=实际读入的字节数
+ 0026  BE 0000				mov si,0
+ 0029				encryption:
+ 0029  80 BC 0000 R 61			cmp buf1[si],'a'	;如果不是小写字母
+ 002E  72 14				jb change
+ 0030  80 BC 0000 R 7A			cmp buf1[si],'z'
+ 0035  77 0D				ja change
+					
+ 0037  B8 00DB				mov ax,219		;'a'+'z'=219
+ 003A  8A 9C 0000 R			mov bl,buf1[si]
+ 003E  2B C3				sub ax,bx		;a~z倒置为z~a
+ 0040  88 84 0064 R			mov buf2[si],al
+ 0044				change:
+ 0044  46				inc si
+ 0045  E2 E2			loop encryption    
+				    
+				;----------创建加密文件----------  
+ 0047  B4 3C			    mov ah,3ch
+ 0049  B9 0000			    mov cx,00
+ 004C  8D 16 00D4 R		    lea dx,file2
+ 0050  CD 21			    int 21h
+ 0052  A3 00DE R		    mov f2,ax	;存放新建的文件代号
+					
+				;----------写入加密文件----------
+ 0055  B4 40			    mov ah,40h
+ 0057  8B 1E 00DE R		    mov bx,f2
+ 005B  33 C9			    xor cx,cx
+ 005D  B1 64			    mov cl,100
+ 005F  8D 16 0064 R		    lea dx,buf2
+ 0063  CD 21			    int 21h
+					    
+ 0065  B4 4C			    MOV AH,4CH
+ 0067  CD 21			    INT 21H
+ 0069				CODES ENDS
+				    END START
+				    
+
+
+Microsoft (R) Macro Assembler Version 6.11		    05/15/21 08:14:51
+tempfile.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+CODES  . . . . . . . . . . . . .	16 Bit	 0069	  Para	  Private 
+DATAS  . . . . . . . . . . . . .	16 Bit	 00E0	  Para	  Private 
+STACKS . . . . . . . . . . . . .	16 Bit	 0000	  Para	  Private 
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+START  . . . . . . . . . . . . .	L Near	 0000	  CODES	
+buf1 . . . . . . . . . . . . . .	Byte	 0000	  DATAS	
+buf2 . . . . . . . . . . . . . .	Byte	 0064	  DATAS	
+change . . . . . . . . . . . . .	L Near	 0044	  CODES	
+encryption . . . . . . . . . . .	L Near	 0029	  CODES	
+f1 . . . . . . . . . . . . . . .	Word	 00D2	  DATAS	
+f2 . . . . . . . . . . . . . . .	Word	 00DE	  DATAS	
+file1  . . . . . . . . . . . . .	Byte	 00C8	  DATAS	
+file2  . . . . . . . . . . . . .	Byte	 00D4	  DATAS	
+
+	   0 Warnings
+	   0 Errors
